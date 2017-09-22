@@ -564,12 +564,12 @@ class Server{
 	public function getDefaultGamemode() : int{
 		return $this->getConfigInt("gamemode", 0) & 0b11;
 	}
-
-	/**
+        
+        /**
 	 * @return string
 	 */
 	public function getMotd() : string{
-		return $this->getConfigString("motd", "Minecraft: PE Server");
+		return "§l§o§3Game§bCraft PE§r";
 	}
 
 	/**
@@ -1463,7 +1463,6 @@ class Server{
 
 			$this->logger->info("Loading server properties...");
 			$this->properties = new Config($this->dataPath . "server.properties", Config::PROPERTIES, [
-				"motd" => "Minecraft: PE Server",
 				"server-port" => 19132,
 				"white-list" => false,
 				"announce-player-achievements" => true,
@@ -1574,7 +1573,7 @@ class Server{
 			$this->getLogger()->debug("Machine unique id: " . Utils::getMachineUniqueId());
 
 			$this->network = new Network($this);
-			$this->network->setName($this->getMotd());
+			$this->network->setName("§l§o§3Game§bCraft PE§r");
 
 
 			$this->logger->info($this->getLanguage()->translateString("pocketmine.server.info", [
@@ -1954,7 +1953,7 @@ class Server{
 		}
 
 
-		$sender->sendMessage(new TranslationContainer(TextFormat::GOLD . "%commands.generic.notFound"));
+		$sender->sendMessage("§l§o§3G§bC§r§7: §cYou typed an unknown command, try again!");
 
 		return false;
 	}
@@ -2270,7 +2269,7 @@ class Server{
 	}
 
 	public function addOnlinePlayer(Player $player){
-		$this->updatePlayerListData($player->getUniqueId(), $player->getId(), $player->getDisplayName(), $player->getSkinId(), $player->getSkinData());
+		$this->updatePlayerListData($player->getUniqueId(), $player->getId(), $player->getNameTag(), $player->getSkinId(), $player->getSkinData());
 
 		$this->playerList[$player->getRawUniqueId()] = $player;
 	}
@@ -2317,7 +2316,7 @@ class Server{
 		$pk = new PlayerListPacket();
 		$pk->type = PlayerListPacket::TYPE_ADD;
 		foreach($this->playerList as $player){
-			$pk->entries[] = PlayerListEntry::createAdditionEntry($player->getUniqueId(), $player->getId(), $player->getDisplayName(), $player->getSkinId(), $player->getSkinData());
+			$pk->entries[] = PlayerListEntry::createAdditionEntry($player->getUniqueId(), $player->getId(), $player->getNameTag(), $player->getSkinId(), $player->getSkinData());
 		}
 
 		$p->dataPacket($pk);

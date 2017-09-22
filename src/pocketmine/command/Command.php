@@ -170,7 +170,7 @@ abstract class Command{
 		if($this->permissionMessage === null){
 			$target->sendMessage(new TranslationContainer(TextFormat::RED . "%commands.generic.permission"));
 		}elseif($this->permissionMessage !== ""){
-			$target->sendMessage(str_replace("<permission>", $this->getPermission(), $this->permissionMessage));
+			$target->sendMessage("§l§o§3G§bC§r§7: §cYou don't have permission to use that command!");
 		}
 
 		return false;

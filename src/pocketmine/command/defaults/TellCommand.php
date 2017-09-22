@@ -55,16 +55,15 @@ class TellCommand extends VanillaCommand{
 		$player = $sender->getServer()->getPlayer($name);
 
 		if($player === $sender){
-			$sender->sendMessage(new TranslationContainer(TextFormat::RED . "%commands.message.sameTarget"));
+			$sender->sendMessage("§l§o§3G§bC§r§7: §cYou can't send a message to yourself!");
 			return true;
 		}
 
 		if($player instanceof Player){
-			$sender->sendMessage("[{$sender->getName()} -> {$player->getDisplayName()}] " . implode(" ", $args));
-			$name = $sender instanceof Player ? $sender->getDisplayName() : $sender->getName();
-			$player->sendMessage("[$name -> {$player->getName()}] " . implode(" ", $args));
+			$sender->sendMessage("§l§o§3G§bC§r§7: §bYou whispered to §6" . $player->getDisplayName() . "§b: §c" . implode(" ", $args));
+                        $player->sendMessage("§l§o§3G§bC§r§7: §6" . ($sender instanceof Player ? $sender->getDisplayName() : $sender->getName()) . "§b whispered to you: §c" . implode(" ", $args));
 		}else{
-			$sender->sendMessage(new TranslationContainer("commands.generic.player.notFound"));
+			$sender->sendMessage("§l§o§3G§bC§r§7: §cThat player isn't online or doesn't exist.");
 		}
 
 		return true;

@@ -182,7 +182,7 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 	public static function isValidUserName(string $name) : bool{
 		$lname = strtolower($name);
 		$len = strlen($name);
-		return $lname !== "rcon" and $lname !== "console" and $len >= 1 and $len <= 16 and preg_match("/[^A-Za-z0-9_ ]/", $name) === 0;
+		return $lname !== "rcon" and $lname !== "console" and $len >= 1 and $len <= 16 and preg_match("/[^A-Za-z0-9_]/", $name) === 0;
 	}
 
 	/**
@@ -334,7 +334,7 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 	public function setBanned(bool $value){
 		if($value === true){
 			$this->server->getNameBans()->addBan($this->getName(), null, null, null);
-			$this->kick("You have been banned");
+			$this->kick("§l§o§3G§bC§r§7: §cYou were banned from the server.");
 		}else{
 			$this->server->getNameBans()->remove($this->getName());
 		}
@@ -709,14 +709,14 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 	public function setDisplayName(string $name){
 		$this->displayName = $name;
 		if($this->spawned){
-			$this->server->updatePlayerListData($this->getUniqueId(), $this->getId(), $this->getDisplayName(), $this->getSkinId(), $this->getSkinData());
+			$this->server->updatePlayerListData($this->getUniqueId(), $this->getId(), $this->getNameTag(), $this->getSkinId(), $this->getSkinData());
 		}
 	}
 
 	public function setSkin(string $str, string $skinId){
 		parent::setSkin($str, $skinId);
 		if($this->spawned){
-			$this->server->updatePlayerListData($this->getUniqueId(), $this->getId(), $this->getDisplayName(), $skinId, $str);
+			$this->server->updatePlayerListData($this->getUniqueId(), $this->getId(), $this->getNameTag(), $skinId, $str);
 		}
 	}
 
@@ -917,9 +917,6 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 				$this->getDisplayName()
 			])
 		));
-		if(strlen(trim((string) $ev->getJoinMessage())) > 0){
-			$this->server->broadcastMessage($ev->getJoinMessage());
-		}
 
 		$this->noDamageTicks = 60;
 
@@ -1325,7 +1322,7 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 	public function sendSettings(){
 		$pk = new AdventureSettingsPacket();
 
-		$pk->setFlag(AdventureSettingsPacket::WORLD_IMMUTABLE, $this->isSpectator());
+		$pk->setFlag(AdventureSettingsPacket::WORLD_IMMUTABLE, $this->isAdventure());
 		$pk->setFlag(AdventureSettingsPacket::NO_PVP, $this->isSpectator());
 		$pk->setFlag(AdventureSettingsPacket::AUTO_JUMP, $this->autoJump);
 		$pk->setFlag(AdventureSettingsPacket::ALLOW_FLIGHT, $this->allowFlight);
@@ -1791,13 +1788,14 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 
 	protected function processLogin(){
 		if(!$this->server->isWhitelisted($this->iusername)){
-			$this->close($this->getLeaveMessage(), "Server is white-listed");
+			$this->close($this->getLeaveMessage(), "§l§o§eN§6G§r§7: §cMaintenance in progress.");
 
 			return;
 		}elseif($this->server->getNameBans()->isBanned($this->iusername) or $this->server->getIPBans()->isBanned($this->getAddress())){
-			$this->close($this->getLeaveMessage(), "You are banned");
-
-			return;
+                    $banentry = new BanEntry($this->getName());
+                    $reason = $banentry->getReason();
+                    $this->close($this->getLeaveMessage(), TextFormat::RED . "§l§o§eN§6G§r§7: §cYou are banned for " . $reason);
+                    return;
 		}
 
 		foreach($this->server->getLoggedInPlayers() as $p){
@@ -3334,9 +3332,6 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 					}
 
 					$this->server->getPluginManager()->callEvent($ev = new PlayerQuitEvent($this, $message, $reason));
-					if($ev->getQuitMessage() != ""){
-						$this->server->broadcastMessage($ev->getQuitMessage());
-					}
 				}
 				$this->joined = false;
 
@@ -3474,111 +3469,6 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 			$this->getDisplayName()
 		];
 
-		$cause = $this->getLastDamageCause();
-
-		switch($cause === null ? EntityDamageEvent::CAUSE_CUSTOM : $cause->getCause()){
-			case EntityDamageEvent::CAUSE_ENTITY_ATTACK:
-				if($cause instanceof EntityDamageByEntityEvent){
-					$e = $cause->getDamager();
-					if($e instanceof Player){
-						$message = "death.attack.player";
-						$params[] = $e->getDisplayName();
-						break;
-					}elseif($e instanceof Living){
-						$message = "death.attack.mob";
-						$params[] = $e->getNameTag() !== "" ? $e->getNameTag() : $e->getName();
-						break;
-					}else{
-						$params[] = "Unknown";
-					}
-				}
-				break;
-			case EntityDamageEvent::CAUSE_PROJECTILE:
-				if($cause instanceof EntityDamageByEntityEvent){
-					$e = $cause->getDamager();
-					if($e instanceof Player){
-						$message = "death.attack.arrow";
-						$params[] = $e->getDisplayName();
-					}elseif($e instanceof Living){
-						$message = "death.attack.arrow";
-						$params[] = $e->getNameTag() !== "" ? $e->getNameTag() : $e->getName();
-						break;
-					}else{
-						$params[] = "Unknown";
-					}
-				}
-				break;
-			case EntityDamageEvent::CAUSE_SUICIDE:
-				$message = "death.attack.generic";
-				break;
-			case EntityDamageEvent::CAUSE_VOID:
-				$message = "death.attack.outOfWorld";
-				break;
-			case EntityDamageEvent::CAUSE_FALL:
-				if($cause instanceof EntityDamageEvent){
-					if($cause->getFinalDamage() > 2){
-						$message = "death.fell.accident.generic";
-						break;
-					}
-				}
-				$message = "death.attack.fall";
-				break;
-
-			case EntityDamageEvent::CAUSE_SUFFOCATION:
-				$message = "death.attack.inWall";
-				break;
-
-			case EntityDamageEvent::CAUSE_LAVA:
-				$message = "death.attack.lava";
-				break;
-
-			case EntityDamageEvent::CAUSE_FIRE:
-				$message = "death.attack.onFire";
-				break;
-
-			case EntityDamageEvent::CAUSE_FIRE_TICK:
-				$message = "death.attack.inFire";
-				break;
-
-			case EntityDamageEvent::CAUSE_DROWNING:
-				$message = "death.attack.drown";
-				break;
-
-			case EntityDamageEvent::CAUSE_CONTACT:
-				if($cause instanceof EntityDamageByBlockEvent){
-					if($cause->getDamager()->getId() === Block::CACTUS){
-						$message = "death.attack.cactus";
-					}
-				}
-				break;
-
-			case EntityDamageEvent::CAUSE_BLOCK_EXPLOSION:
-			case EntityDamageEvent::CAUSE_ENTITY_EXPLOSION:
-				if($cause instanceof EntityDamageByEntityEvent){
-					$e = $cause->getDamager();
-					if($e instanceof Player){
-						$message = "death.attack.explosion.player";
-						$params[] = $e->getDisplayName();
-					}elseif($e instanceof Living){
-						$message = "death.attack.explosion.player";
-						$params[] = $e->getNameTag() !== "" ? $e->getNameTag() : $e->getName();
-						break;
-					}
-				}else{
-					$message = "death.attack.explosion";
-				}
-				break;
-
-			case EntityDamageEvent::CAUSE_MAGIC:
-				$message = "death.attack.magic";
-				break;
-
-			case EntityDamageEvent::CAUSE_CUSTOM:
-				break;
-
-			default:
-				break;
-		}
 
 		$this->server->getPluginManager()->callEvent($ev = new PlayerDeathEvent($this, $this->getDrops(), new TranslationContainer($message, $params)));
 
@@ -3591,10 +3481,6 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 				$this->inventory->setHeldItemIndex(0, false); //This is already handled when sending contents, don't send it twice
 				$this->inventory->clearAll();
 			}
-		}
-
-		if($ev->getDeathMessage() != ""){
-			$this->server->broadcast($ev->getDeathMessage(), Server::BROADCAST_CHANNEL_USERS);
 		}
 	}
 
