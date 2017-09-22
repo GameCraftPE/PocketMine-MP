@@ -1788,13 +1788,13 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 
 	protected function processLogin(){
 		if(!$this->server->isWhitelisted($this->iusername)){
-			$this->close($this->getLeaveMessage(), "§l§o§eN§6G§r§7: §cMaintenance in progress.");
+			$this->close($this->getLeaveMessage(), "§l§o§3G§bC§r§7: §cMaintenance in progress.");
 
 			return;
 		}elseif($this->server->getNameBans()->isBanned($this->iusername) or $this->server->getIPBans()->isBanned($this->getAddress())){
                     $banentry = new BanEntry($this->getName());
                     $reason = $banentry->getReason();
-                    $this->close($this->getLeaveMessage(), TextFormat::RED . "§l§o§eN§6G§r§7: §cYou are banned for " . $reason);
+                    $this->close($this->getLeaveMessage(), TextFormat::RED . "§l§o§3G§bC§r§7: §cYou are banned for " . $reason);
                     return;
 		}
 
