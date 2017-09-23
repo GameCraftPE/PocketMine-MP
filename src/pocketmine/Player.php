@@ -491,6 +491,10 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 
 	public function resetFallDistance(){
 		parent::resetFallDistance();
+                $this->resetAirTicks();
+        }
+        
+        public function resetAirTicks(){
 		if($this->inAirTicks !== 0){
 			$this->startAirTicks = 5;
 		}
@@ -758,6 +762,10 @@ class Player extends Human implements CommandSender, ChunkLoader, IPlayer{
 	public function getInAirTicks() : int{
 		return $this->inAirTicks;
 	}
+        
+        public function getStartAirTicks() : int{
+ 		return $this->startAirTicks;
+ 	}
 
 	/**
 	 * Returns whether the player is currently using an item (right-click and hold).
